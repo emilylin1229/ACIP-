@@ -1,0 +1,48 @@
+name: CDC AI Agent Daily Monitor
+
+on:
+  schedule:
+    # 每天早上 8:00 (台灣時間 UTC+8) = UTC 00:00
+    - cron: '0 0 * * *'
+  # 允許手動從 GitHub 網頁觸發
+  workflow_dispatch:
+
+jobs:
+  run-agent:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+        cache: 'pip'
+
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Run CDC AI Agent
+      env:
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        GMAIL_USER: ${{ secrets.GMAIL_USER }}
+        GMAIL_PASSWORD: ${{ secrets.GMAIL_PASSWORD }}
+        EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
+      run: python main.py
+
+    - name: Commit updated history
+      id: commit
+      run: |
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+        git add history.json
+        if git diff-index --quiet HEAD; then
+          echo "No new records to commit."
+        else
+          git commit -m "chore: update scraped history"
+          git push
+        fi
