@@ -39,10 +39,11 @@ jobs:
       run: |
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+        touch history.json
         git add history.json
         if git diff-index --quiet HEAD; then
           echo "No new records to commit."
         else
           git commit -m "chore: update scraped history"
-          git push
+          git push || true
         fi
